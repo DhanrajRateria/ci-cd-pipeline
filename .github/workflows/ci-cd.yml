@@ -1,0 +1,36 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Restore Dependencies
+        run: dotnet restore src/MyWindowsService.sln
+
+      - name: Build Solution
+        run: dotnet build src/MyWindowsService.sln --configuration Release
+
+      - name: Run Tests
+        run: dotnet test src/UnitTests/UnitTests.csproj
+
+  deploy:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Deploy Windows Service
+        run: |
+          $ErrorActionPreference = "Stop"
+          .\scripts\deploy.ps1 -SourcePath "./bin/Release/net6.0/MyWindowsService.exe" -DestinationPath "C:/DeployedServices"
